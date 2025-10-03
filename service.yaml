@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nationalparks-service # ArgoCDのアプリケーション名 + “-service”
+  namespace: cd-demo # OpenShiftのプロジェクト名
+spec:
+  selector:
+    app: nationalparks # ArgoCDのアプリケーション名
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: https
+      port: 8443
+      targetPort: 8443
+      protocol: TCP
+    - name: metrics
+      port: 8778
+      targetPort: 8778
+      protocol: TCP
+  type: ClusterIP
