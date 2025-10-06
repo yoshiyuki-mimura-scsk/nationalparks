@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nationalparks # ArgoCDのアプリケーション名
+  namespace: cd-demo # OpenShiftのプロジェクト名
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nationalparks # ArgoCDのアプリケーション名
+  template:
+    metadata:
+      labels:
+        app: nationalparks # ArgoCDのアプリケーション名
+    spec:
+      containers:
+        - name: nationalparks # ArgoCDのアプリケーション名
+          image: image-registry.openshift-image-registry.svc:5000/cd-demo/nationalparks:latest # OpenShiftのイメージのパス
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8443
+              protocol: TCP
+            - containerPort: 8778
+              protocol: TCP
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nationalparks-service # ArgoCDのアプリケーション名 + “-service”
+  namespace: cd-demo # OpenShiftのプロジェクト名
+spec:
+  selector:
+    app: nationalparks # ArgoCDのアプリケーション名
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: https
+      port: 8443
+      targetPort: 8443
+      protocol: TCP
+    - name: metrics
+      port: 8778
+      targetPort: 8778
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nationalparks-route # ArgoCDのアプリケーション名 + “-route”
+  namespace: cd-demo# OpenShiftのプロジェクト名
+spec:
+  to:
+    kind: Service
+    name: nationalparks-service # ArgoCDのアプリケーション名 + “-service”
+  port:
+    targetPort: 8080
