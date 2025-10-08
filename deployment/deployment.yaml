@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: nationalparks # ArgoCDのアプリケーション名
-          image: image-registry.openshift-image-registry.svc:5000/cscsk-cicd-dev/nationalparks:latest # OpenShiftのイメージのパス
+          image: image-registry.openshift-image-registry.svc:5000/scsk-cicd-dev/nationalparks:latest # OpenShiftのイメージのパス
           ports:
             - containerPort: 8080
               protocol: TCP
