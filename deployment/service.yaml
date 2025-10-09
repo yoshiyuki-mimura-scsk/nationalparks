@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nationalparks-service # ArgoCDのアプリケーション名 + “-service”
+  name: nationalparks # ArgoCDのアプリケーション名
   namespace: scsk-cicd-dev # OpenShiftのプロジェクト名
 spec:
   type: ClusterIP
