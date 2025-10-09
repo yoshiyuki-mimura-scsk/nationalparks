@@ -5,8 +5,6 @@ metadata:
   namespace: scsk-cicd-dev # OpenShiftのプロジェクト名
 spec:
   type: ClusterIP
-  ipFamilies:
-    - IPv4
   ports:
     - name: http
       port: 8080
@@ -20,8 +18,5 @@ spec:
       port: 8778
       targetPort: 8778
       protocol: TCP
-  internalTrafficPolicy: Cluster
-  ipFamilyPolicy: SingleStack
-  sessionAffinity: None
   selector:
     app: nationalparks # ArgoCDのアプリケーション名
