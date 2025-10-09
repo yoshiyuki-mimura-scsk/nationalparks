@@ -4,8 +4,7 @@ metadata:
   name: nationalparks-service # ArgoCDのアプリケーション名 + “-service”
   namespace: scsk-cicd-dev # OpenShiftのプロジェクト名
 spec:
-  selector:
-    app: nationalparks # ArgoCDのアプリケーション名
+  type: ClusterIP
   ports:
     - name: http
       port: 8080
@@ -19,4 +18,5 @@ spec:
       port: 8778
       targetPort: 8778
       protocol: TCP
-  type: ClusterIP
+  selector:
+    app: nationalparks # ArgoCDのアプリケーション名
