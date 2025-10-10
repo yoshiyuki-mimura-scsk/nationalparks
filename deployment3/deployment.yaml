@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nationalparks # ArgoCDのアプリケーション名
+  namespace: scsk-cicd-dev3 # OpenShiftのプロジェクト名
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nationalparks # ArgoCDのアプリケーション名
+  template:
+    metadata:
+      labels:
+        app: nationalparks # ArgoCDのアプリケーション名
+    spec:
+      containers:
+        - name: nationalparks # ArgoCDのアプリケーション名
+          image: image-registry.openshift-image-registry.svc:5000/scsk-cicd-dev3/nationalparks:latest # OpenShiftのイメージのパス
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8443
+              protocol: TCP
+            - containerPort: 8778
+              protocol: TCP

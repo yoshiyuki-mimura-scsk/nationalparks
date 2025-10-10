@@ -1,0 +1,11 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nationalparks-route # ArgoCDのアプリケーション名 + “-route”
+  namespace: scsk-cicd-de2 # OpenShiftのプロジェクト名
+spec:
+  to:
+    kind: Service
+    name: nationalparks-service # ArgoCDのアプリケーション名 + “-service”
+  port:
+    targetPort: 8080
