@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nationalparks # ArgoCDのアプリケーション名
+  name: nationalparks-dev2 # ArgoCDのアプリケーション名
   namespace: scsk-cicd-dev2 # OpenShiftのプロジェクト名
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nationalparks # ArgoCDのアプリケーション名
+      app: nationalparks-dev2 # ArgoCDのアプリケーション名
   template:
     metadata:
       labels:
-        app: nationalparks # ArgoCDのアプリケーション名
+        app: nationalparks-dev2 # ArgoCDのアプリケーション名
     spec:
       containers:
         - name: nationalparks # ArgoCDのアプリケーション名

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nationalparks # ArgoCDのアプリケーション名
+  name: nationalparks-dev3 # ArgoCDのアプリケーション名
   namespace: scsk-cicd-dev3 # OpenShiftのプロジェクト名
 spec:
   type: ClusterIP
@@ -19,5 +19,5 @@ spec:
       targetPort: 8778
       protocol: TCP
   selector:
-    app: nationalparks # ArgoCDのアプリケーション名
-    deployment: nationalparks # ArgoCDのアプリケーション名
+    app: nationalparks-dev3 # ArgoCDのアプリケーション名
+    deployment: nationalparks-dev3 # ArgoCDのアプリケーション名
