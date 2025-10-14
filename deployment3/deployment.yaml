@@ -1,21 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nationalparks-dev3 # ArgoCDのアプリケーション名
+  name: nationalparks
   namespace: scsk-cicd-dev3 # OpenShiftのプロジェクト名
+  labels:
+    app: nationalparks
+    app.kubernetes.io/component: nationalparks
+    app.kubernetes.io/instance: nationalparks
+    app.kubernetes.io/name: nationalparks
+    app.kubernetes.io/part-of: nationalparks-git-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nationalparks-dev3 # ArgoCDのアプリケーション名
+      app: nationalparks
   template:
     metadata:
       labels:
-        app: nationalparks-dev3 # ArgoCDのアプリケーション名
+        app: nationalparks
+        deployment: nationalparks
     spec:
       containers:
-        - name: nationalparks-dev3 # ArgoCDのアプリケーション名
-          image: image-registry.openshift-image-registry.svc:5000/scsk-cicd-dev3/nationalparks:latest # OpenShiftのイメージのパス
+        - name: nationalparks
+          image: image-registry.openshift-image-registry.svc:5000/scsk-cicd-dev2/nationalparks:latest # OpenShiftのイメージのパス
           ports:
             - containerPort: 8080
               protocol: TCP
