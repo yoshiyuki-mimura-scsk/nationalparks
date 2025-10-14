@@ -18,6 +18,7 @@ spec:
     metadata:
       labels:
         app: nationalparks
+        deployment: nationalparks
     spec:
       containers:
         - name: nationalparks
