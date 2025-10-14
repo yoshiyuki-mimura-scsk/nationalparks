@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: nationalparks-dev2 # ArgoCDのアプリケーション名
   namespace: scsk-cicd-dev2 # OpenShiftのプロジェクト名
+  labels:
+    app: nationalparks-dev2
+    app.kubernetes.io/name: nationalparks-dev2
+    app.kubernetes.io/part-of: nationalparks-git-app
 spec:
   replicas: 1
   selector:
@@ -14,7 +18,7 @@ spec:
         app: nationalparks-dev2 # ArgoCDのアプリケーション名
     spec:
       containers:
-        - name: nationalparks # ArgoCDのアプリケーション名
+        - name: nationalparks-dev2 # ArgoCDのアプリケーション名
           image: image-registry.openshift-image-registry.svc:5000/scsk-cicd-dev2/nationalparks:latest # OpenShiftのイメージのパス
           ports:
             - containerPort: 8080
