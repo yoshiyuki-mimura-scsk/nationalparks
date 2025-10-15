@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nationalparks
-  namespace: scsk-cicd-dev2 # OpenShiftのプロジェクト名
+  namespace: scsk-cicd-dev2
   labels:
     app: nationalparks
     app.kubernetes.io/component: nationalparks

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nationalparks
-  namespace: scsk-cicd-dev3 # OpenShiftのプロジェクト名
+  namespace: scsk-cicd-dev3
   labels:
     app: nationalparks
     app.kubernetes.io/component: nationalparks
@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: nationalparks
     app.kubernetes.io/part-of: nationalparks-git-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: nationalparks
@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: nationalparks
-          image: image-registry.openshift-image-registry.svc:5000/scsk-cicd-dev3/nationalparks:latest # OpenShiftのイメージのパス
+          image: image-registry.openshift-image-registry.svc:5000/scsk-cicd-dev3/nationalparks:latest
           ports:
             - containerPort: 8080
               protocol: TCP

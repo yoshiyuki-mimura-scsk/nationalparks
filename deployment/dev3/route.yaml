@@ -2,7 +2,7 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: nationalparks
-  namespace: scsk-cicd-dev3 # OpenShiftのプロジェクト名
+  namespace: scsk-cicd-dev3
   labels:
     app: nationalparks
     app.kubernetes.io/component: nationalparks
