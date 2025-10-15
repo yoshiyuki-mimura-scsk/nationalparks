@@ -26,4 +26,3 @@ spec:
       protocol: TCP
   selector:
     app: nationalparks
-    deployment: nationalparks
