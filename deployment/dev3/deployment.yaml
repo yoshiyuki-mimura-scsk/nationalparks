@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: nationalparks
     app.kubernetes.io/part-of: nationalparks-git-app
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: nationalparks
