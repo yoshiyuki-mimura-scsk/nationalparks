@@ -1,0 +1,28 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: custom-image-pusher
+  namespace: scsk-cd-dev
+rules:
+  - verbs:
+      - create
+    apiGroups:
+      - ''
+      - image.openshift.io
+    resources:
+      - imagestreamimports
+  - verbs:
+      - get
+    apiGroups:
+      - ''
+      - image.openshift.io
+    resources:
+      - imagestreams
+  - verbs:
+      - get
+      - update
+    apiGroups:
+      - ''
+      - image.openshift.io
+    resources:
+      - imagestreams/layers

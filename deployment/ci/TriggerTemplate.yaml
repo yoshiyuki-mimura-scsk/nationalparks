@@ -1,0 +1,52 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: github-trigger-template
+  namespace: scsk-ci-dev
+spec:
+  params:
+    - default: master
+      description: 'The Git revision (branch) to checkout, provided by the poller.'
+      name: gitrevision
+    - default: 'https://github.com/yoshiyuki-mimura-scsk/nationalparks.git'
+      description: The Git repository URL.
+      name: giturl
+    - default: latest
+      description: The Git tag.
+      name: gittag
+    - default: main
+      description: 'The Manifest Git revision (branch) to checkout, provided by the poller.'
+      name: manifest_gitrevision
+    - default: 'https://github.com/yoshiyuki-mimura-scsk/nationalparks-cd.git'
+      description: The Manifest Git repository URL.
+      name: manifest_giturl
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: nationalparks-pipeline-$(tt.params.gitrevision)-
+      spec:
+        params:
+          - name: APP_NAME
+            value: nationalparks
+          - name: SOURCE_GIT_URL
+            value: $(tt.params.giturl)
+          - name: SOURCE_GIT_REVISION
+            value: $(tt.params.gitrevision)
+          - name: SOURCE_GIT_TAG
+            value: $(tt.params.gittag)
+          - name: MANIFEST_GIT_URL
+            value: $(tt.params.manifest_giturl)
+          - name: MANIFEST_GIT_REVISION
+            value: $(tt.params.manifest_gitrevision)
+        pipelineRef:
+          name: nationalparks-pipeline
+        workspaces:
+          - name: app-source
+            persistentVolumeClaim:
+              claimName: app-source-pvc
+          - name: manifest-source
+            persistentVolumeClaim:
+              claimName: manifest-source-pvc
+          - emptyDir: {}
+            name: maven_settings

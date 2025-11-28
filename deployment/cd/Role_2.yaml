@@ -1,0 +1,85 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: argocd-deploy-role
+  namespace: scsk-cd-dev
+rules:
+  - verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - ''
+    resources:
+      - services
+      - secrets
+      - configmaps
+      - serviceaccounts
+      - persistentvolumeclaims
+      - pods
+  - verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - apps
+    resources:
+      - deployments
+      - replicasets
+      - daemonsets
+      - statefulsets
+  - verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+  - verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+      - rolebindings
+  - verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - argoproj.io
+    resources:
+      - applications
+      - appprojects
+  - verbs:
+      - create
+      - get
+      - list
+      - watch
+    apiGroups:
+      - ''
+    resources:
+      - events

@@ -1,0 +1,75 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: update-manifest-git
+  namespace: scsk-ci-dev
+spec:
+  params:
+    - name: CURRENT_NAMESPACE
+      type: string
+    - name: APP_NAME
+      type: string
+    - name: SOURCE_GIT_TAG
+      type: string
+    - name: MANIFEST_GIT_URL
+      type: string
+    - name: MANIFEST_GIT_REVISION
+      type: string
+    - name: CD_NAMESPACE
+      type: string
+  steps:
+    - computeResources: {}
+      env:
+        - name: GITHUB_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: manifest-github-secret
+        - name: GITHUB_PAT
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: manifest-github-secret
+      image: 'registry.redhat.io/ubi8/ubi:latest'
+      name: update-and-push
+      script: |
+        #!/bin/bash
+        set -e
+
+        yum install -y git
+        git config --global --add safe.directory '*'
+        git config --global user.email "pipeline@example.com"
+        git config --global user.name "Tekton Pipeline"
+
+        cd $(workspaces.source.path)
+
+        ORIGINAL_URL=$(git remote get-url origin)
+        REPO_PATH=$(echo "$ORIGINAL_URL" | sed 's|https://github.com/||' | sed 's|\.git$||')
+        AUTH_URL="https://${GITHUB_USER}:${GITHUB_PAT}@github.com/${REPO_PATH}.git"
+
+        git remote set-url origin "$AUTH_URL"
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+        if [ "$CURRENT_BRANCH" = "HEAD" ]; then
+          git checkout -b $(params.MANIFEST_GIT_REVISION) || git checkout $(params.MANIFEST_GIT_REVISION)
+        fi
+
+        cd deployment/dev1
+
+        sed -i "s|image: .*/$(params.APP_NAME):.*|image: image-registry.openshift-image-registry.svc:5000/$(params.CD_NAMESPACE)/$(params.APP_NAME):$(params.SOURCE_GIT_TAG)|g" deployment.yaml
+
+        cat deployment.yaml
+
+        if git diff --quiet; then
+          echo "No changes detected in deployment.yaml"
+          echo "Current image tag is already: $(params.SOURCE_GIT_TAG)"
+          echo "Skipping commit and push"
+          exit 0
+        fi
+
+        git add deployment.yaml
+        git commit -m "Update image tag to $(params.SOURCE_GIT_TAG)"
+        PUSH_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        git push origin "$PUSH_BRANCH"
+  workspaces:
+    - name: source

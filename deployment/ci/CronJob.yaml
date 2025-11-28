@@ -1,0 +1,123 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: github-repo-poller
+  namespace: scsk-ci-dev
+spec:
+  schedule: '0 */2 * * *'
+  concurrencyPolicy: Allow
+  suspend: false
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: pipeline
+          schedulerName: default-scheduler
+          terminationGracePeriodSeconds: 30
+          securityContext: {}
+          containers:
+            - resources: {}
+              terminationMessagePath: /dev/termination-log
+              name: git-poller
+              command:
+                - /bin/bash
+                - '-c'
+              env:
+                - name: LISTENER_URL
+                  value: 'http://el-github-webhook-listener.scsk-ci-dev.svc.cluster.local:8080'
+                - name: GIT_BRANCH
+                  value: master
+                - name: GIT_URL
+                  value: 'https://github.com/yoshiyuki-mimura-scsk/nationalparks.git'
+                - name: GITHUB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: github-secret
+                      key: username
+                - name: GITHUB_PAT
+                  valueFrom:
+                    secretKeyRef:
+                      name: github-secret
+                      key: password
+              imagePullPolicy: Always
+              volumeMounts:
+                - name: state-storage
+                  mountPath: /state
+              terminationMessagePolicy: File
+              image: 'registry.access.redhat.com/ubi8/ubi:latest'
+              args:
+                - |
+                  yum install -y git jq && yum clean all
+
+                  AUTH_URL=$(echo $GIT_URL | sed "s|https://|https://${GITHUB_USER}:${GITHUB_PAT}@|")
+
+                  # 最新のタグを取得
+                  CURRENT_TAG=$(git ls-remote --tags $AUTH_URL | \
+                              grep -v '\^{}' | \
+                              sed 's|.*refs/tags/||' | \
+                              sort -V | \
+                              tail -1)
+
+                  if [ -z "$CURRENT_TAG" ]; then
+                      echo "No tags found in repository"
+                      exit 0
+                  fi
+
+                  # PersistentVolume に保存されたファイルから読み取り
+                  PREVIOUS_TAG=$(cat /state/last_tag 2>/dev/null || echo "initial")
+
+                  echo "Previous tag: $PREVIOUS_TAG"
+                  echo "Current tag: $CURRENT_TAG"
+
+                  if [ "$CURRENT_TAG" = "$PREVIOUS_TAG" ]; then
+                    echo "No changes tag"
+                    exit 0
+                  fi
+
+                  # 最新タグの SHA を取得
+                  CURRENT_SHA=$(git ls-remote $AUTH_URL "refs/tags/$CURRENT_TAG" | awk '{print $1}')
+
+                  # PersistentVolume に保存されたファイルから読み取り
+                  PREVIOUS_SHA=$(cat /state/last_sha 2>/dev/null || echo "initial")
+
+                  echo "Previous SHA: $PREVIOUS_SHA"
+                  echo "Current SHA: $CURRENT_SHA"
+
+                  if [ "$CURRENT_SHA" = "$PREVIOUS_SHA" ]; then
+                    echo "No changes detected on branch $GIT_BRANCH."
+                    exit 0
+                  fi
+
+                  echo "New changes detected on branch $GIT_BRANCH! Triggering pipeline..."
+
+                  JSON_PAYLOAD=$(jq -n \
+                    --arg gitrevision "${CURRENT_SHA}" \
+                    --arg giturl "${GIT_URL}" \
+                    --arg gittag "${CURRENT_TAG}" \
+                    '{gitrevision: $gitrevision, giturl: $giturl, gittag: $gittag}')
+
+                  echo "JSON_PAYLOAD: $JSON_PAYLOAD"
+
+                  curl -X POST \
+                    -H "Content-Type: application/json" \
+                    -d "${JSON_PAYLOAD}" \
+                    "${LISTENER_URL}"
+
+                  # PersistentVolume に新しい TAG を保存
+                  echo $CURRENT_TAG > /state/last_tag
+
+                  # PersistentVolume に新しい SHA を保存
+                  echo $CURRENT_SHA > /state/last_sha
+          serviceAccount: pipeline
+          volumes:
+            - name: state-storage
+              persistentVolumeClaim:
+                claimName: git-poller-pvc
+          dnsPolicy: ClusterFirst
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1

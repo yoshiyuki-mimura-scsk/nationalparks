@@ -1,0 +1,189 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: nationalparks-pipeline
+  namespace: scsk-ci-dev
+spec:
+  params:
+    - default: nationalparks
+      name: APP_NAME
+      type: string
+    - default: 'https://github.com/yoshiyuki-mimura-scsk/nationalparks.git'
+      description: The application git repository url
+      name: SOURCE_GIT_URL
+      type: string
+    - default: master
+      description: The application git repository revision
+      name: SOURCE_GIT_REVISION
+      type: string
+    - default: latest
+      description: The Git tag
+      name: SOURCE_GIT_TAG
+      type: string
+    - default: 'https://github.com/yoshiyuki-mimura-scsk/nationalparks-cd.git'
+      description: The manifest git repository url
+      name: MANIFEST_GIT_URL
+      type: string
+    - default: main
+      description: The manifest git repository revision
+      name: MANIFEST_GIT_REVISION
+      type: string
+    - default: scsk-cd-dev
+      description: CD namesmpace
+      name: CD_NAMESPACE
+      type: string
+  tasks:
+    - name: git-clone
+      params:
+        - name: URL
+          value: $(params.SOURCE_GIT_URL)
+        - name: REVISION
+          value: $(params.SOURCE_GIT_REVISION)
+        - name: SUBMODULES
+          value: 'true'
+        - name: DEPTH
+          value: '1'
+        - name: SSL_VERIFY
+          value: 'true'
+        - name: DELETE_EXISTING
+          value: 'true'
+        - name: VERBOSE
+          value: 'true'
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: output
+          workspace: app-source
+    - name: build-and-test
+      params:
+        - name: MAVEN_IMAGE
+          value: gcr.io/cloud-builders/mvn
+        - name: GOALS
+          value:
+            - package
+        - name: PROXY_PROTOCOL
+          value: http
+      runAfter:
+        - git-clone
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: maven
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: source
+          workspace: app-source
+        - name: maven_settings
+          workspace: maven_settings
+    - name: build-image
+      params:
+        - name: IMAGE
+          value: 'image-registry.openshift-image-registry.svc:5000/$(params.CD_NAMESPACE)/$(params.APP_NAME):$(params.SOURCE_GIT_TAG)'
+        - name: BUILDER_IMAGE
+          value: 'registry.redhat.io/rhel8/buildah@sha256:82aa9592f3262313ec52f7a2335641e2581b0d0d9807980846d0539bb77d0657'
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: .
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: oci
+      runAfter:
+        - build-and-test
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: source
+          workspace: app-source
+    - name: git-clone-manifest
+      params:
+        - name: URL
+          value: $(params.MANIFEST_GIT_URL)
+        - name: REVISION
+          value: $(params.MANIFEST_GIT_REVISION)
+        - name: SUBMODULES
+          value: 'true'
+        - name: DEPTH
+          value: '1'
+        - name: SSL_VERIFY
+          value: 'true'
+        - name: DELETE_EXISTING
+          value: 'true'
+        - name: VERBOSE
+          value: 'true'
+      runAfter:
+        - build-image
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: output
+          workspace: manifest-source
+    - name: update-manifest
+      params:
+        - name: CURRENT_NAMESPACE
+          value: $(context.pipelineRun.namespace)
+        - name: APP_NAME
+          value: $(params.APP_NAME)
+        - name: SOURCE_GIT_TAG
+          value: $(params.SOURCE_GIT_TAG)
+        - name: MANIFEST_GIT_URL
+          value: $(params.MANIFEST_GIT_URL)
+        - name: MANIFEST_GIT_REVISION
+          value: $(params.MANIFEST_GIT_REVISION)
+        - name: CD_NAMESPACE
+          value: $(params.CD_NAMESPACE)
+      runAfter:
+        - git-clone-manifest
+      taskRef:
+        kind: Task
+        name: update-manifest-git
+      workspaces:
+        - name: source
+          workspace: manifest-source
+    - name: redeploy
+      params:
+        - name: SCRIPT
+          value: oc rollout restart deployment/$(params.APP_NAME)
+      runAfter:
+        - update-manifest
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: openshift-client
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+  workspaces:
+    - name: app-source
+    - name: manifest-source
+    - name: maven_settings
